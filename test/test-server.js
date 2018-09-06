@@ -150,3 +150,82 @@ describe("Shopping List", function() {
     );
   });
 });
+
+describe("Recipes", function() {
+  before(function() {
+    return runServer();
+  });
+  after(function() {
+    return closeServer();
+  });
+  it("should list ingredients on GET", function() {
+    return chai
+      .request(app)
+      .get("/recipes")
+      .then(function(res) {
+        expect(res).to.have.status(200);
+        expect(res).to.be.json;
+        expect(res.body).to.be.a("array");
+        expect(res.body.length).to.be.at.least(1);
+        const expectedKeys2 = ["name", "ingredients"];
+        res.body.forEach(function(item) {
+          expect(item).to.be.a("object");
+          expect(item).to.include.keys(expectedKeys2);
+        });
+      });
+  });
+  it("should add an ingredients on POST", function() {
+    const newItem2 = { name: "potato salad", checked: false };
+    return chai
+      .request(app)
+      .post("/recipes")
+      .send(newItem2)
+      .then(function(res) {
+        expect(res).to.have.status(201);
+        expect(res).to.be.json;
+        expect(res.body).to.be.a("object");
+        expect(res.body).to.include.keys("name", "ingredients");
+        expect(res.body.name).to.not.equal(null);
+        expect(res.body).to.deep.equal(
+          Object.assign(newItem2, { name: res.body.name })
+        );
+      });
+  });
+  it("should update ingredients on PUT", function() {
+    const updateIngredientsData = {
+      name: "Cesar Salad",
+      checked: true
+    };
+    return (
+      chai
+        .request(app)
+        .get("/recipes")
+        .then(function(res) {
+          updateIngredientsData.name = res.body[0].name;
+          return chai
+            .request(app)
+            .put(`/recipes/${updateIngredientsData.name}`)
+            .send(updateIngredientsData);
+        })
+        .then(function(res) {
+          expect(res).to.have.status(200);
+          expect(res).to.be.json;
+          expect(res.body).to.be.a("object");
+          expect(res.body).to.deep.equal(updateIngredientsData);
+      })
+    );
+  });
+  it("should delete ingredients on DELETE", function() {
+    return (
+      chai
+        .request(app)
+        .get("/recipes")
+        .then(function(res) {
+          return chai.request(app).delete(`/recipes/${res.body[0].name}`);
+        })
+        .then(function(res) {
+          expect(res).to.have.status(204);
+        })
+    );
+  });
+});
